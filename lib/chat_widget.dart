@@ -23,8 +23,8 @@ class ChatWidget extends StatefulWidget {
   // Initializer of data
   final List<Widget> messages;
 
-  ChatWidget({
-      Key key,
+  ChatWidget(
+      {Key key,
       this.sendIcon,
       this.iconColor,
       this.sendButtonColor,
@@ -41,7 +41,8 @@ class ChatWidget extends StatefulWidget {
 }
 
 class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
-  final TextEditingController textEditingController = new TextEditingController();
+  final TextEditingController textEditingController =
+      new TextEditingController();
   var channel;
 
   void onData(_data) {
@@ -156,42 +157,42 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Container(
-        // if you enter a image to show for the container it will boxfit cover
-        // else will return a white background
-        decoration: widget.background == null
-            ? new BoxDecoration(
-                color: Colors.white,
-              )
-            : new BoxDecoration(
-                image: DecorationImage(
-                  image: widget.background,
-                  fit: BoxFit.cover,
-                ),
+      // if you enter a image to show for the container it will boxfit cover
+      // else will return a white background
+      decoration: widget.background == null
+          ? new BoxDecoration(
+              color: Colors.white,
+            )
+          : new BoxDecoration(
+              image: DecorationImage(
+                image: widget.background,
+                fit: BoxFit.cover,
               ),
-        child: Column(
-          children: <Widget>[
-            new Flexible(
+            ),
+      child: Column(
+        children: <Widget>[
+          new Flexible(
               child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onPanDown: (_) {
-                  FocusScope.of(context).requestFocus(FocusNode());
-                },
-                child: new ListView.builder(
-                  itemCount: widget.messages.length,
-                  reverse: true,
-                  itemBuilder: (context, index) {
-                    return widget.messages[index];
-                  },
-                ),
-            )),
-            SizedBox(
-              height: 8.0,
+            behavior: HitTestBehavior.opaque,
+            onPanDown: (_) {
+              FocusScope.of(context).requestFocus(FocusNode());
+            },
+            child: new ListView.builder(
+              itemCount: widget.messages.length,
+              reverse: true,
+              itemBuilder: (context, index) {
+                return widget.messages[index];
+              },
             ),
-            new Divider(
-              height: 1.0,
-            ),
-            _textComposerWidget()
-          ],
-        ));
+          )),
+          SizedBox(
+            height: 8.0,
+          ),
+          new Divider(
+            height: 1.0,
+          ),
+          _textComposerWidget()
+        ],
+      ));
   }
 }
