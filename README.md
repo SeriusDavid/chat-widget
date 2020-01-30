@@ -1,6 +1,8 @@
 # Chat Widget 
 A widget to build a chat with websocket easily with custom options for easy customization
 
+![Alt text](assets/example.png?raw=true "Example")
+
 ### Installing
 Depend on it
 Add this to your package's pubspec.yaml file:
