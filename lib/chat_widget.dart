@@ -156,11 +156,10 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Container(
+        // if you enter a image to show for the container it will boxfit cover
+        // else will return a white background
         decoration: widget.background == null
-            ?
-            // if you enter a image to show for the container it will boxfit cover
-            // else will return a white background
-            new BoxDecoration(
+            ? new BoxDecoration(
                 color: Colors.white,
               )
             : new BoxDecoration(
@@ -172,18 +171,18 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
         child: Column(
           children: <Widget>[
             new Flexible(
-                child: GestureDetector(
-              behavior: HitTestBehavior.opaque,
-              onPanDown: (_) {
-                FocusScope.of(context).requestFocus(FocusNode());
-              },
-              child: new ListView.builder(
-                itemCount: widget.messages.length,
-                reverse: true,
-                itemBuilder: (context, index) {
-                  return widget.messages[index];
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onPanDown: (_) {
+                  FocusScope.of(context).requestFocus(FocusNode());
                 },
-              ),
+                child: new ListView.builder(
+                  itemCount: widget.messages.length,
+                  reverse: true,
+                  itemBuilder: (context, index) {
+                    return widget.messages[index];
+                  },
+                ),
             )),
             SizedBox(
               height: 8.0,
