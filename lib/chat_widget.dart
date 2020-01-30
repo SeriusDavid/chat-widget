@@ -6,7 +6,7 @@ import 'package:web_socket_channel/io.dart';
 
 class ChatWidget extends StatefulWidget {
   // Styles
-  final Icon sendIcon;
+  final IconData sendIcon;
   final Color iconColor;
   final Color sendButtonColor;
   final Color containerTextFieldColor;
