@@ -10,20 +10,20 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  
+
   # FOR WEBSOCKET IN CHAT
   web_socket_channel: ^1.0.15
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
+  very_good_analysis: ^1.0.4
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter.
 flutter:
-
   # To add assets to your package, add an assets section, like this:
   # assets:
   #  - images/a_dot_burr.jpeg
@@ -34,7 +34,6 @@ flutter:
   #
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.
-
   # To add custom fonts to your package, add a fonts section here,
   # in this "flutter" section. Each entry in this list should have a
   # "family" key with the font family name, and a "fonts" key with a

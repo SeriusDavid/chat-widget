@@ -5,12 +5,28 @@ import 'package:flutter/material.dart';
 import 'package:web_socket_channel/io.dart';
 
 class ChatWidget extends StatefulWidget {
+  const ChatWidget({
+    Key key,
+    this.sendIcon,
+    this.iconColor,
+    this.sendButtonColor,
+    this.containerTextFieldColor,
+    this.background,
+    this.hintTextField,
+    this.messageLoading = false,
+    @required this.messages,
+    @required this.channel,
+    @required this.onData,
+    @required this.onSubmit,
+  }) : super(key: key);
+
   // Styles
   final IconData sendIcon;
   final Color iconColor;
   final Color sendButtonColor;
   final Color containerTextFieldColor;
   final ImageProvider background;
+  final bool messageLoading;
 
   // Optional options to display
   final String hintTextField;
@@ -23,48 +39,34 @@ class ChatWidget extends StatefulWidget {
   // Initializer of data
   final List<Widget> messages;
 
-  ChatWidget(
-      {Key key,
-      this.sendIcon,
-      this.iconColor,
-      this.sendButtonColor,
-      this.containerTextFieldColor,
-      this.background,
-      this.hintTextField,
-      @required this.messages,
-      @required this.channel,
-      @required this.onData,
-      @required this.onSubmit})
-      : super(key: key);
   @override
-  State createState() => new _ChatWidgetState();
+  State createState() => _ChatWidgetState();
 }
 
 class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
-  final TextEditingController textEditingController =
-      new TextEditingController();
-  var channel;
+  final textEditingController = TextEditingController();
+  // var channel;
 
   void onData(_data) {
-    var data = json.decode(_data);
+    final data = json.decode(_data);
 
-    switch (data["type"]) {
-      case "ping":
+    switch (data['type']) {
+      case 'ping':
         break;
-      case "welcome":
-        print("Welcome");
+      case 'welcome':
+        print('Welcome');
         break;
-      case "confirm_subscription":
-        print("Connected");
+      case 'confirm_subscription':
+        print('Connected');
         break;
       default:
         print(data.toString());
     }
 
-    if (data["type"] != "ping" && data["message"] != null) {
-      if (data["message"]["message"] != null) {
+    if (data['type'] != 'ping' && data['message'] != null) {
+      if (data['message']['message'] != null) {
         setState(() {
-          widget.onData(data["message"]["message"], this);
+          widget.onData(data['message']['message'], this);
         });
       }
     }
@@ -72,7 +74,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
 
   void _handleSubmit(String text) async {
     textEditingController.clear();
-    if (text != null && text.trim().length != 0 && text.trim() != "") {
+    if (text != null && text.trim().isNotEmpty && text.trim() != '') {
       widget.onSubmit(text, this);
     }
   }
@@ -88,6 +90,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
     });
   }
 
+  @override
   void dispose() {
     widget.channel.sink.close();
     super.dispose();
@@ -100,19 +103,33 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
         color: Colors.white,
         child: Row(
           children: <Widget>[
-            SizedBox(width: 8.0),
+            // const SizedBox(
+            //   width: 8.0,
+            // ),
+            widget.messageLoading
+                ? Container(
+                    margin: const EdgeInsets.only(left: 5, right: 8),
+                    width: 25,
+                    height: 25,
+                    child: const CircularProgressIndicator(
+                      backgroundColor: Colors.orange,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Container(),
             Expanded(
               child: TextField(
                 controller: textEditingController,
                 onSubmitted: _handleSubmit,
                 decoration: InputDecoration(
-                  hintText:
-                      widget.hintTextField == null ? "" : widget.hintTextField,
+                  hintText: widget.hintTextField ?? '',
                   border: InputBorder.none,
                 ),
               ),
             ),
-            SizedBox(width: 8.0),
+            const SizedBox(
+              width: 8.0,
+            ),
           ],
         ),
       ),
@@ -121,37 +138,33 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
 
   Widget _textComposerWidget() {
     return SafeArea(
-        child: Container(
-      color: widget.containerTextFieldColor == null
-          ? Color(0xffefefef)
-          : widget.containerTextFieldColor,
-      padding: EdgeInsets.all(8.0),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: _textInput(),
-          ),
-          SizedBox(
-            width: 5.0,
-          ),
-          GestureDetector(
-            onTap: () {
-              _handleSubmit(textEditingController.text);
-            },
-            child: CircleAvatar(
-              backgroundColor: widget.sendButtonColor == null
-                  ? Colors.orangeAccent
-                  : widget.sendButtonColor,
-              child: Icon(
-                  widget.sendIcon == null ? Icons.send : widget.sendIcon,
-                  color: widget.iconColor == null
-                      ? Colors.white
-                      : widget.iconColor),
+      child: Container(
+        color: widget.containerTextFieldColor ?? const Color(0xffefefef),
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          children: <Widget>[
+            Expanded(
+              child: _textInput(),
             ),
-          ),
-        ],
+            const SizedBox(
+              width: 5.0,
+            ),
+            GestureDetector(
+              onTap: () {
+                _handleSubmit(textEditingController.text);
+              },
+              child: CircleAvatar(
+                backgroundColor: widget.sendButtonColor ?? Colors.orangeAccent,
+                child: Icon(
+                  widget.sendIcon ?? Icons.send,
+                  color: widget.iconColor ?? Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
-    ));
+    );
   }
 
   @override
@@ -160,10 +173,10 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
       // if you enter a image to show for the container it will boxfit cover
       // else will return a white background
       decoration: widget.background == null
-          ? new BoxDecoration(
+          ? const BoxDecoration(
               color: Colors.white,
             )
-          : new BoxDecoration(
+          : BoxDecoration(
               image: DecorationImage(
                 image: widget.background,
                 fit: BoxFit.cover,
@@ -171,28 +184,30 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
             ),
       child: Column(
         children: <Widget>[
-          new Flexible(
-              child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onPanDown: (_) {
-              FocusScope.of(context).requestFocus(FocusNode());
-            },
-            child: new ListView.builder(
-              itemCount: widget.messages.length,
-              reverse: true,
-              itemBuilder: (context, index) {
-                return widget.messages[index];
+          Flexible(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onPanDown: (_) {
+                FocusScope.of(context).requestFocus(FocusNode());
               },
+              child: ListView.builder(
+                itemCount: widget.messages.length,
+                reverse: true,
+                itemBuilder: (context, index) {
+                  return widget.messages[index];
+                },
+              ),
             ),
-          )),
-          SizedBox(
+          ),
+          const SizedBox(
             height: 8.0,
           ),
-          new Divider(
+          const Divider(
             height: 1.0,
           ),
-          _textComposerWidget()
+          _textComposerWidget(),
         ],
-      ));
+      ),
+    );
   }
 }
