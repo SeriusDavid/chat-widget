@@ -78,7 +78,7 @@ class ChatWidget extends StatefulWidget {
 class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
   final textEditingController = TextEditingController();
 
-  bool isConnected = false;
+  bool _isConnected = false;
   IOWebSocketChannel _channel;
 
   void onData(_data) {
@@ -93,7 +93,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
       case 'confirm_subscription':
         print('Connected');
         setState(() {
-          isConnected = true;
+          _isConnected = true;
         });
         break;
       default:
@@ -133,16 +133,26 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
     _channel.stream.listen(
       onData,
       onDone: () async {
-        setState(() {
-          isConnected = false;
-        });
-        _reconnect();
+        if (mounted) {
+          setState(() {
+            _isConnected = false;
+          });
+          _reconnect();
+        }
       },
       onError: (error) {
-        setState(() {
-          isConnected = false;
-        });
-        _reconnect();
+        // setState(() {
+        //   _isConnected = false;
+        // });
+        // _reconnect();
+        // print('=========onError=========');
+        // print(error.toString());
+        if (mounted) {
+          setState(() {
+            _isConnected = false;
+          });
+          _reconnect();
+        }
       },
     );
   }
@@ -188,6 +198,9 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                   ),
             Expanded(
               child: TextField(
+                enabled: _isConnected,
+                readOnly: !_isConnected,
+                enableInteractiveSelection: !_isConnected,
                 controller: textEditingController,
                 onSubmitted: _handleSubmit,
                 decoration: InputDecoration(
@@ -216,21 +229,21 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
             child: Row(
               children: [
                 Icon(
-                    isConnected
+                    _isConnected
                         ? widget.connectedIcon
                         : widget.disconnectedIcon,
                     size: 17,
-                    color: isConnected
+                    color: _isConnected
                         ? widget.connectedColor
                         : widget.disconnectedColor),
                 const SizedBox(
                   width: 4,
                 ),
                 Text(
-                  isConnected
+                  _isConnected
                       ? widget.connectedMessage
                       : widget.disconnectedMessage,
-                  style: isConnected
+                  style: _isConnected
                       ? widget.connectedTexStyle
                       : widget.disconnectedTexStyle,
                 ),
