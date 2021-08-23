@@ -14,6 +14,25 @@ class ChatWidget extends StatefulWidget {
     this.background,
     this.hintTextField,
     this.messageLoading = false,
+    this.headers,
+    this.connectedMessage = 'Conectado',
+    this.disconnectedMessage = 'Desconectado',
+    this.connectedIcon = Icons.wifi,
+    this.disconnectedIcon = Icons.wifi_off,
+    this.connectedColor = Colors.orange,
+    this.disconnectedColor = Colors.black,
+    this.connectedTexStyle = const TextStyle(
+      fontWeight: FontWeight.w600,
+      fontSize: 15,
+      color: Colors.orange,
+    ),
+    this.disconnectedTexStyle = const TextStyle(
+      fontWeight: FontWeight.w600,
+      fontSize: 15,
+      color: Colors.black,
+    ),
+    @required this.url,
+    @required this.data,
     @required this.messages,
     @required this.channel,
     @required this.onData,
@@ -39,13 +58,28 @@ class ChatWidget extends StatefulWidget {
   // Initializer of data
   final List<Widget> messages;
 
+  final String data;
+  final Map<String, dynamic> headers;
+  final String url;
+
+  final String connectedMessage;
+  final String disconnectedMessage;
+  final IconData connectedIcon;
+  final IconData disconnectedIcon;
+  final Color connectedColor;
+  final Color disconnectedColor;
+  final TextStyle connectedTexStyle;
+  final TextStyle disconnectedTexStyle;
+
   @override
   State createState() => _ChatWidgetState();
 }
 
 class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
   final textEditingController = TextEditingController();
-  // var channel;
+
+  bool isConnected = false;
+  IOWebSocketChannel _channel;
 
   void onData(_data) {
     final data = json.decode(_data);
@@ -58,6 +92,9 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
         break;
       case 'confirm_subscription':
         print('Connected');
+        setState(() {
+          isConnected = true;
+        });
         break;
       default:
         print(data.toString());
@@ -83,10 +120,43 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     // Initializers for conectivity and animations
-    widget.channel.stream.listen(onData);
+    // widget.channel.stream.listen(onData);
 
+    _channel = widget.channel;
+    _listen();
     setState(() {
       //used to rebuild our widget with the initializers
+    });
+  }
+
+  void _listen() {
+    _channel.stream.listen(
+      onData,
+      onDone: () async {
+        setState(() {
+          isConnected = false;
+        });
+        _reconnect();
+      },
+      onError: (error) {
+        setState(() {
+          isConnected = false;
+        });
+        _reconnect();
+      },
+    );
+  }
+
+  void _reconnect() async {
+    await Future.delayed(const Duration(seconds: 3)).then((_) {
+      if (widget.headers != null) {
+        _channel =
+            IOWebSocketChannel.connect(widget.url, headers: widget.headers);
+      } else {
+        _channel = IOWebSocketChannel.connect(widget.url);
+      }
+      _channel.sink.add(widget.data);
+      _listen();
     });
   }
 
@@ -103,9 +173,6 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
         color: Colors.white,
         child: Row(
           children: <Widget>[
-            // const SizedBox(
-            //   width: 8.0,
-            // ),
             widget.messageLoading
                 ? Container(
                     margin: const EdgeInsets.only(left: 5, right: 8),
@@ -116,7 +183,9 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                       strokeWidth: 2,
                     ),
                   )
-                : Container(),
+                : Container(
+                    width: 8.0,
+                  ),
             Expanded(
               child: TextField(
                 controller: textEditingController,
@@ -138,31 +207,64 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
 
   Widget _textComposerWidget() {
     return SafeArea(
-      child: Container(
-        color: widget.containerTextFieldColor ?? const Color(0xffefefef),
-        padding: const EdgeInsets.all(8.0),
-        child: Row(
-          children: <Widget>[
-            Expanded(
-              child: _textInput(),
-            ),
-            const SizedBox(
-              width: 5.0,
-            ),
-            GestureDetector(
-              onTap: () {
-                _handleSubmit(textEditingController.text);
-              },
-              child: CircleAvatar(
-                backgroundColor: widget.sendButtonColor ?? Colors.orangeAccent,
-                child: Icon(
-                  widget.sendIcon ?? Icons.send,
-                  color: widget.iconColor ?? Colors.white,
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.only(top: 3, left: 10),
+            color: const Color(0xffefefef),
+            child: Row(
+              children: [
+                Icon(
+                    isConnected
+                        ? widget.connectedIcon
+                        : widget.disconnectedIcon,
+                    size: 17,
+                    color: isConnected
+                        ? widget.connectedColor
+                        : widget.disconnectedColor),
+                const SizedBox(
+                  width: 4,
                 ),
-              ),
+                Text(
+                  isConnected
+                      ? widget.connectedMessage
+                      : widget.disconnectedMessage,
+                  style: isConnected
+                      ? widget.connectedTexStyle
+                      : widget.disconnectedTexStyle,
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+          Container(
+            color: widget.containerTextFieldColor ?? const Color(0xffefefef),
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: _textInput(),
+                ),
+                const SizedBox(
+                  width: 5.0,
+                ),
+                GestureDetector(
+                  onTap: () {
+                    _handleSubmit(textEditingController.text);
+                  },
+                  child: CircleAvatar(
+                    backgroundColor:
+                        widget.sendButtonColor ?? Colors.orangeAccent,
+                    child: Icon(
+                      widget.sendIcon ?? Icons.send,
+                      color: widget.iconColor ?? Colors.white,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
