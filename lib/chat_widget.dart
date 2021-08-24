@@ -92,9 +92,11 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
         break;
       case 'confirm_subscription':
         print('Connected');
-        setState(() {
-          _isConnected = true;
-        });
+        if (mounted) {
+          setState(() {
+            _isConnected = true;
+          });
+        }
         break;
       default:
         print(data.toString());
@@ -102,9 +104,11 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
 
     if (data['type'] != 'ping' && data['message'] != null) {
       if (data['message']['message'] != null) {
-        setState(() {
-          widget.onData(data['message']['message'], this);
-        });
+        if (mounted) {
+          setState(() {
+            widget.onData(data['message']['message'], this);
+          });
+        }
       }
     }
   }
@@ -137,20 +141,16 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
           setState(() {
             _isConnected = false;
           });
+          await Future.delayed(const Duration(milliseconds: 5000));
           _reconnect();
         }
       },
-      onError: (error) {
-        // setState(() {
-        //   _isConnected = false;
-        // });
-        // _reconnect();
-        // print('=========onError=========');
-        // print(error.toString());
+      onError: (error) async {
         if (mounted) {
           setState(() {
             _isConnected = false;
           });
+          await Future.delayed(const Duration(milliseconds: 5000));
           _reconnect();
         }
       },
@@ -158,7 +158,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
   }
 
   void _reconnect() async {
-    await Future.delayed(const Duration(seconds: 3)).then((_) {
+    if (!_isConnected) {
       if (widget.headers != null) {
         _channel =
             IOWebSocketChannel.connect(widget.url, headers: widget.headers);
@@ -167,7 +167,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
       }
       _channel.sink.add(widget.data);
       _listen();
-    });
+    }
   }
 
   @override
