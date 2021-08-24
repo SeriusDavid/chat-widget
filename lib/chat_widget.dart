@@ -5,12 +5,47 @@ import 'package:flutter/material.dart';
 import 'package:web_socket_channel/io.dart';
 
 class ChatWidget extends StatefulWidget {
+  const ChatWidget({
+    Key key,
+    this.sendIcon,
+    this.iconColor,
+    this.sendButtonColor,
+    this.containerTextFieldColor,
+    this.background,
+    this.hintTextField,
+    this.messageLoading = false,
+    this.headers,
+    this.connectedMessage = 'Conectado',
+    this.disconnectedMessage = 'Desconectado',
+    this.connectedIcon = Icons.wifi,
+    this.disconnectedIcon = Icons.wifi_off,
+    this.connectedColor = Colors.orange,
+    this.disconnectedColor = Colors.black,
+    this.connectedTexStyle = const TextStyle(
+      fontWeight: FontWeight.w600,
+      fontSize: 15,
+      color: Colors.orange,
+    ),
+    this.disconnectedTexStyle = const TextStyle(
+      fontWeight: FontWeight.w600,
+      fontSize: 15,
+      color: Colors.black,
+    ),
+    @required this.url,
+    @required this.data,
+    @required this.messages,
+    @required this.channel,
+    @required this.onData,
+    @required this.onSubmit,
+  }) : super(key: key);
+
   // Styles
   final IconData sendIcon;
   final Color iconColor;
   final Color sendButtonColor;
   final Color containerTextFieldColor;
   final ImageProvider background;
+  final bool messageLoading;
 
   // Optional options to display
   final String hintTextField;
@@ -23,56 +58,64 @@ class ChatWidget extends StatefulWidget {
   // Initializer of data
   final List<Widget> messages;
 
-  ChatWidget(
-      {Key key,
-      this.sendIcon,
-      this.iconColor,
-      this.sendButtonColor,
-      this.containerTextFieldColor,
-      this.background,
-      this.hintTextField,
-      @required this.messages,
-      @required this.channel,
-      @required this.onData,
-      @required this.onSubmit})
-      : super(key: key);
+  final String data;
+  final Map<String, dynamic> headers;
+  final String url;
+
+  final String connectedMessage;
+  final String disconnectedMessage;
+  final IconData connectedIcon;
+  final IconData disconnectedIcon;
+  final Color connectedColor;
+  final Color disconnectedColor;
+  final TextStyle connectedTexStyle;
+  final TextStyle disconnectedTexStyle;
+
   @override
-  State createState() => new _ChatWidgetState();
+  State createState() => _ChatWidgetState();
 }
 
 class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
-  final TextEditingController textEditingController =
-      new TextEditingController();
-  var channel;
+  final textEditingController = TextEditingController();
+
+  bool _isConnected = false;
+  IOWebSocketChannel _channel;
 
   void onData(_data) {
-    var data = json.decode(_data);
+    final data = json.decode(_data);
 
-    switch (data["type"]) {
-      case "ping":
+    switch (data['type']) {
+      case 'ping':
         break;
-      case "welcome":
-        print("Welcome");
+      case 'welcome':
+        print('Welcome');
         break;
-      case "confirm_subscription":
-        print("Connected");
+      case 'confirm_subscription':
+        print('Connected');
+        if (mounted) {
+          setState(() {
+            _isConnected = true;
+          });
+        }
         break;
       default:
         print(data.toString());
     }
 
-    if (data["type"] != "ping" && data["message"] != null) {
-      if (data["message"]["message"] != null) {
-        setState(() {
-          widget.onData(data["message"]["message"], this);
-        });
+    if (data['type'] != 'ping' && data['message'] != null) {
+      if (data['message']['message'] != null) {
+        if (mounted) {
+          setState(() {
+            widget.onData(data['message']['message'], this);
+          });
+        }
       }
     }
   }
 
   void _handleSubmit(String text) async {
     textEditingController.clear();
-    if (text != null && text.trim().length != 0 && text.trim() != "") {
+    if (text != null && text.trim().isNotEmpty && text.trim() != '') {
       widget.onSubmit(text, this);
     }
   }
@@ -81,13 +124,53 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
   void initState() {
     super.initState();
     // Initializers for conectivity and animations
-    widget.channel.stream.listen(onData);
+    // widget.channel.stream.listen(onData);
 
+    _channel = widget.channel;
+    _listen();
     setState(() {
       //used to rebuild our widget with the initializers
     });
   }
 
+  void _listen() {
+    _channel.stream.listen(
+      onData,
+      onDone: () async {
+        if (mounted) {
+          setState(() {
+            _isConnected = false;
+          });
+          await Future.delayed(const Duration(milliseconds: 5000));
+          _reconnect();
+        }
+      },
+      onError: (error) async {
+        if (mounted) {
+          setState(() {
+            _isConnected = false;
+          });
+          await Future.delayed(const Duration(milliseconds: 5000));
+          _reconnect();
+        }
+      },
+    );
+  }
+
+  void _reconnect() async {
+    if (!_isConnected) {
+      if (widget.headers != null) {
+        _channel =
+            IOWebSocketChannel.connect(widget.url, headers: widget.headers);
+      } else {
+        _channel = IOWebSocketChannel.connect(widget.url);
+      }
+      _channel.sink.add(widget.data);
+      _listen();
+    }
+  }
+
+  @override
   void dispose() {
     widget.channel.sink.close();
     super.dispose();
@@ -100,19 +183,35 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
         color: Colors.white,
         child: Row(
           children: <Widget>[
-            SizedBox(width: 8.0),
+            widget.messageLoading
+                ? Container(
+                    margin: const EdgeInsets.only(left: 5, right: 8),
+                    width: 25,
+                    height: 25,
+                    child: const CircularProgressIndicator(
+                      backgroundColor: Colors.orange,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Container(
+                    width: 8.0,
+                  ),
             Expanded(
               child: TextField(
+                enabled: _isConnected,
+                readOnly: !_isConnected,
+                enableInteractiveSelection: !_isConnected,
                 controller: textEditingController,
                 onSubmitted: _handleSubmit,
                 decoration: InputDecoration(
-                  hintText:
-                      widget.hintTextField == null ? "" : widget.hintTextField,
+                  hintText: widget.hintTextField ?? '',
                   border: InputBorder.none,
                 ),
               ),
             ),
-            SizedBox(width: 8.0),
+            const SizedBox(
+              width: 8.0,
+            ),
           ],
         ),
       ),
@@ -121,37 +220,66 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
 
   Widget _textComposerWidget() {
     return SafeArea(
-        child: Container(
-      color: widget.containerTextFieldColor == null
-          ? Color(0xffefefef)
-          : widget.containerTextFieldColor,
-      padding: EdgeInsets.all(8.0),
-      child: Row(
-        children: <Widget>[
-          Expanded(
-            child: _textInput(),
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.only(top: 3, left: 10),
+            color: const Color(0xffefefef),
+            child: Row(
+              children: [
+                Icon(
+                    _isConnected
+                        ? widget.connectedIcon
+                        : widget.disconnectedIcon,
+                    size: 17,
+                    color: _isConnected
+                        ? widget.connectedColor
+                        : widget.disconnectedColor),
+                const SizedBox(
+                  width: 4,
+                ),
+                Text(
+                  _isConnected
+                      ? widget.connectedMessage
+                      : widget.disconnectedMessage,
+                  style: _isConnected
+                      ? widget.connectedTexStyle
+                      : widget.disconnectedTexStyle,
+                ),
+              ],
+            ),
           ),
-          SizedBox(
-            width: 5.0,
-          ),
-          GestureDetector(
-            onTap: () {
-              _handleSubmit(textEditingController.text);
-            },
-            child: CircleAvatar(
-              backgroundColor: widget.sendButtonColor == null
-                  ? Colors.orangeAccent
-                  : widget.sendButtonColor,
-              child: Icon(
-                  widget.sendIcon == null ? Icons.send : widget.sendIcon,
-                  color: widget.iconColor == null
-                      ? Colors.white
-                      : widget.iconColor),
+          Container(
+            color: widget.containerTextFieldColor ?? const Color(0xffefefef),
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              children: <Widget>[
+                Expanded(
+                  child: _textInput(),
+                ),
+                const SizedBox(
+                  width: 5.0,
+                ),
+                GestureDetector(
+                  onTap: () {
+                    _handleSubmit(textEditingController.text);
+                  },
+                  child: CircleAvatar(
+                    backgroundColor:
+                        widget.sendButtonColor ?? Colors.orangeAccent,
+                    child: Icon(
+                      widget.sendIcon ?? Icons.send,
+                      color: widget.iconColor ?? Colors.white,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
         ],
       ),
-    ));
+    );
   }
 
   @override
@@ -160,10 +288,10 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
       // if you enter a image to show for the container it will boxfit cover
       // else will return a white background
       decoration: widget.background == null
-          ? new BoxDecoration(
+          ? const BoxDecoration(
               color: Colors.white,
             )
-          : new BoxDecoration(
+          : BoxDecoration(
               image: DecorationImage(
                 image: widget.background,
                 fit: BoxFit.cover,
@@ -171,28 +299,30 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
             ),
       child: Column(
         children: <Widget>[
-          new Flexible(
-              child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onPanDown: (_) {
-              FocusScope.of(context).requestFocus(FocusNode());
-            },
-            child: new ListView.builder(
-              itemCount: widget.messages.length,
-              reverse: true,
-              itemBuilder: (context, index) {
-                return widget.messages[index];
+          Flexible(
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onPanDown: (_) {
+                FocusScope.of(context).requestFocus(FocusNode());
               },
+              child: ListView.builder(
+                itemCount: widget.messages.length,
+                reverse: true,
+                itemBuilder: (context, index) {
+                  return widget.messages[index];
+                },
+              ),
             ),
-          )),
-          SizedBox(
+          ),
+          const SizedBox(
             height: 8.0,
           ),
-          new Divider(
+          const Divider(
             height: 1.0,
           ),
-          _textComposerWidget()
+          _textComposerWidget(),
         ],
-      ));
+      ),
+    );
   }
 }
