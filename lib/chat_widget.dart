@@ -4,6 +4,10 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/io.dart';
 
+class _WidgetColors {
+  static const Color red = Color(0xffED3426);
+}
+
 class ChatWidget extends StatefulWidget {
   const ChatWidget({
     Key key,
@@ -19,12 +23,12 @@ class ChatWidget extends StatefulWidget {
     this.disconnectedMessage = 'Desconectado',
     this.connectedIcon = Icons.wifi,
     this.disconnectedIcon = Icons.wifi_off,
-    this.connectedColor = Colors.orange,
+    this.connectedColor = _WidgetColors.red,
     this.disconnectedColor = Colors.black,
     this.connectedTexStyle = const TextStyle(
       fontWeight: FontWeight.w600,
       fontSize: 15,
-      color: Colors.orange,
+      color: _WidgetColors.red,
     ),
     this.disconnectedTexStyle = const TextStyle(
       fontWeight: FontWeight.w600,
@@ -189,7 +193,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                     width: 25,
                     height: 25,
                     child: const CircularProgressIndicator(
-                      backgroundColor: Colors.orange,
+                      backgroundColor: Color(0xffED3426),
                       strokeWidth: 2,
                     ),
                   )
@@ -267,7 +271,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
                   },
                   child: CircleAvatar(
                     backgroundColor:
-                        widget.sendButtonColor ?? Colors.orangeAccent,
+                        widget.sendButtonColor ?? _WidgetColors.red,
                     child: Icon(
                       widget.sendIcon ?? Icons.send,
                       color: widget.iconColor ?? Colors.white,
