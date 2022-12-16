@@ -1,5 +1,7 @@
 library chat_widget;
 
+// ignore_for_file: invalid_assignment
+// ignore_for_file: argument_type_not_assignable
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/io.dart';
@@ -86,9 +88,9 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
   IOWebSocketChannel _channel;
 
   void onData(_data) {
-    final data = json.decode(_data);
+    final data = json.decode(_data) as Map<String, dynamic>;
 
-    switch (data['type']) {
+    switch (data['type'] as String) {
       case 'ping':
         break;
       case 'welcome':
@@ -117,7 +119,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
     }
   }
 
-  void _handleSubmit(String text) async {
+  void _handleSubmit(String text) {
     textEditingController.clear();
     if (text != null && text.trim().isNotEmpty && text.trim() != '') {
       widget.onSubmit(text, this);
