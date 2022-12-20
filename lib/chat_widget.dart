@@ -12,7 +12,7 @@ class _WidgetColors {
 
 class ChatWidget extends StatefulWidget {
   const ChatWidget({
-    Key key,
+    Key? key,
     this.sendIcon,
     this.iconColor,
     this.sendButtonColor,
@@ -37,24 +37,24 @@ class ChatWidget extends StatefulWidget {
       fontSize: 15,
       color: Colors.black,
     ),
-    @required this.url,
-    @required this.data,
-    @required this.messages,
-    @required this.channel,
-    @required this.onData,
-    @required this.onSubmit,
+    required this.url,
+    required this.data,
+    required this.messages,
+    required this.channel,
+    required this.onData,
+    required this.onSubmit,
   }) : super(key: key);
 
   // Styles
-  final IconData sendIcon;
-  final Color iconColor;
-  final Color sendButtonColor;
-  final Color containerTextFieldColor;
-  final ImageProvider background;
+  final IconData? sendIcon;
+  final Color? iconColor;
+  final Color? sendButtonColor;
+  final Color? containerTextFieldColor;
+  final ImageProvider? background;
   final bool messageLoading;
 
   // Optional options to display
-  final String hintTextField;
+  final String? hintTextField;
 
   // FOR IN AND OUT OF DATA
   final IOWebSocketChannel channel;
@@ -65,7 +65,7 @@ class ChatWidget extends StatefulWidget {
   final List<Widget> messages;
 
   final String data;
-  final Map<String, dynamic> headers;
+  final Map<String, dynamic>? headers;
   final String url;
 
   final String connectedMessage;
@@ -85,7 +85,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
   final textEditingController = TextEditingController();
 
   bool _isConnected = false;
-  IOWebSocketChannel _channel;
+  late IOWebSocketChannel _channel;
 
   void onData(_data) {
     final data = json.decode(_data) as Map<String, dynamic>;
@@ -121,7 +121,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
 
   void _handleSubmit(String text) {
     textEditingController.clear();
-    if (text != null && text.trim().isNotEmpty && text.trim() != '') {
+    if (text.isNotEmpty && text.trim().isNotEmpty && text.trim() != '') {
       widget.onSubmit(text, this);
     }
   }
@@ -299,7 +299,7 @@ class _ChatWidgetState extends State<ChatWidget> with TickerProviderStateMixin {
             )
           : BoxDecoration(
               image: DecorationImage(
-                image: widget.background,
+                image: widget.background!,
                 fit: BoxFit.cover,
               ),
             ),
